@@ -1,0 +1,237 @@
+<!-- new_patient_email.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            color: #333; 
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 700px; 
+            margin: auto; 
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0056b3, #007bff);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .appointment-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0056b3;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        .appointment-details h3 {
+            margin-top: 0;
+            color: #0056b3;
+            font-size: 18px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .value {
+            color: #6c757d;
+        }
+        .patient-info-section {
+            background-color: #e3f2fd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .patient-info-section h4 {
+            color: #1565c0;
+            margin-top: 0;
+            border-bottom: 2px solid #1565c0;
+            padding-bottom: 5px;
+        }
+        .symptoms-list {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .symptoms-list h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .button-link {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #0056b3;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 8px;
+            font-weight: bold;
+        }
+        .cancel-button {
+            background-color: #dc3545;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px 30px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .important-note {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 New Patient Appointment Confirmation</h1>
+            <p>MediCare Wellness Center</p>
+        </div>
+        
+        <div class="content">
+            <p>Dear {{ patient.first_name }}{% if patient.middle_initial %} {{ patient.middle_initial }}{% endif %}. {{ patient.last_name }},</p>
+            
+            <p>Thank you for choosing <strong>MediCare Wellness Center</strong>! Your new patient appointment has been successfully scheduled. We have received your comprehensive intake information and look forward to providing you with excellent care.</p>
+            
+            <div class="appointment-details">
+                <h3>📅 Appointment Details</h3>
+                
+                <div class="detail-grid">
+                    <span class="label">Doctor:</span> 
+                    <span class="value"><strong>{{ appointment.doctor_name }}</strong></span>
+                    
+                    <span class="label">Date:</span> 
+                    <span class="value">{{ appointment.appointment_date }}</span>
+                    
+                    <span class="label">Time:</span> 
+                    <span class="value">{{ appointment.appointment_time }} - {{ appointment.end_time }}</span>
+                    
+                    <span class="label">Duration:</span> 
+                    <span class="value">{{ appointment.duration }} minutes</span>
+                    
+                    <span class="label">Appointment Type:</span> 
+                    <span class="value">New Patient Consultation</span>
+                </div>
+            </div>
+
+            {% if patient.current_symptoms %}
+            <div class="symptoms-list">
+                <h4>🩺 Chief Complaint & Symptoms Reported</h4>
+                <p><strong>Primary Reason for Visit:</strong> {{ patient.primary_reason_for_visit }}</p>
+                <p><strong>Symptom Duration:</strong> {{ patient.symptom_duration }}</p>
+                <p><strong>Current Symptoms:</strong> {{ patient.current_symptoms|join(', ') if patient.current_symptoms else 'None specified' }}</p>
+            </div>
+            {% endif %}
+
+            <div class="patient-info-section">
+                <h4>👤 Patient Information Summary</h4>
+                
+                <div class="detail-grid">
+                    <span class="label">Full Name:</span>
+                    <span class="value">{{ patient.first_name }}{% if patient.middle_initial %} {{ patient.middle_initial }}.{% endif %} {{ patient.last_name }}</span>
+                    
+                    <span class="label">Date of Birth:</span>
+                    <span class="value">{{ patient.date_of_birth }}</span>
+                    
+                    <span class="label">Email:</span>
+                    <span class="value">{{ patient.email }}</span>
+                    
+                    <span class="label">Phone:</span>
+                    <span class="value">{{ patient.cell_phone or patient.home_phone }}</span>
+                    
+                    <span class="label">Address:</span>
+                    <span class="value">{{ patient.street_address }}, {{ patient.city }}, {{ patient.state }} {{ patient.zip_code }}</span>
+                    
+                    {% if patient.primary_insurance_company %}
+                    <span class="label">Primary Insurance:</span>
+                    <span class="value">{{ patient.primary_insurance_company }} (ID: {{ patient.primary_member_id }})</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if patient.known_allergies_list %}
+            <div class="important-note">
+                <h4>⚠️ Allergies & Medical Alerts</h4>
+                <p><strong>Known Allergies:</strong> {{ patient.known_allergies_list }}</p>
+                {% if patient.had_severe_allergic_reaction == 'Yes' %}
+                <p><strong>🚨 ALERT:</strong> Patient has history of severe allergic reactions</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="important-note">
+                <h4>📋 What to Bring to Your Appointment</h4>
+                <ul>
+                    <li>Insurance cards (primary and secondary if applicable)</li>
+                    <li>Photo ID (driver's license or state ID)</li>
+                    <li>List of current medications</li>
+                    <li>Any relevant medical records or test results</li>
+                    <li>Payment method for any co-pays</li>
+                </ul>
+                <p><strong>Please arrive 15 minutes early</strong> to complete any final paperwork.</p>
+            </div>
+
+            {% if patient.understands_medication_instructions == 'I have questions about these instructions' %}
+            <div class="important-note" style="background-color: #fff3cd; border-color: #ffeaa7;">
+                <h4>📞 Medication Instructions - Questions Noted</h4>
+                <p>We noted that you have questions about pre-visit medication instructions. Please call our office at your earliest convenience to discuss these with our staff.</p>
+            </div>
+            {% endif %}
+            
+            <div class="button-container">
+                <h4>Need to make changes to your appointment?</h4>
+                {% if appointment.reschedule_url %}
+                <a href="{{ appointment.reschedule_url }}" class="button-link">📅 Reschedule Appointment</a>
+                {% endif %}
+                {% if appointment.cancel_url %}
+                <a href="{{ appointment.cancel_url }}" class="button-link cancel-button">❌ Cancel Appointment</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <h4>MediCare Wellness Center</h4>
+            <p><strong>Your partner in health and wellness</strong></p>
+            
+            <p>You will also receive a separate confirmation email from Calendly with additional appointment management options.</p>
+            
+            <p>If you have any questions about your appointment or need to discuss your intake information, please contact us at your earliest convenience.</p>
+            
+            <p><em>This email contains confidential medical information. Please handle accordingly.</em></p>
+        </div>
+    </div>
+</body>
+</html>

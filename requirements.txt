@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+streamlit
+requests
+python-dotenv
+jinja2
+python-multipart
+email-validator
+pydantic
+openai
+langchain
+langchain-openai
+langchain-core

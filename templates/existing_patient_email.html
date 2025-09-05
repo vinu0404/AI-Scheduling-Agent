@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            color: #333; 
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 700px; 
+            margin: auto; 
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .appointment-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        .appointment-details h3 {
+            margin-top: 0;
+            color: #28a745;
+            font-size: 18px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .value {
+            color: #6c757d;
+        }
+        .patient-info-section {
+            background-color: #d4edda;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .patient-info-section h4 {
+            color: #155724;
+            margin-top: 0;
+            border-bottom: 2px solid #155724;
+            padding-bottom: 5px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .button-link {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 8px;
+            font-weight: bold;
+        }
+        .cancel-button {
+            background-color: #dc3545;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px 30px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .follow-up-note {
+            background-color: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Follow-up Appointment Confirmation</h1>
+            <p>MediCare Wellness Center</p>
+        </div>
+        
+        <div class="content">
+            <p>Dear {{ patient.first_name }}{% if patient.middle_initial %} {{ patient.middle_initial }}.{% endif %} {{ patient.last_name }},</p>
+            
+            <p>Your follow-up appointment has been successfully scheduled with <strong>MediCare Wellness Center</strong>. We look forward to continuing your care and seeing your progress.</p>
+            
+            <div class="appointment-details">
+                <h3>📅 Appointment Details</h3>
+                
+                <div class="detail-grid">
+                    <span class="label">Doctor:</span> 
+                    <span class="value"><strong>{{ appointment.doctor_name }}</strong></span>
+                    
+                    <span class="label">Date:</span> 
+                    <span class="value">{{ appointment.appointment_date }}</span>
+                    
+                    <span class="label">Time:</span> 
+                    <span class="value">{{ appointment.appointment_time }} - {{ appointment.end_time }}</span>
+                    
+                    <span class="label">Duration:</span> 
+                    <span class="value">{{ appointment.duration }} minutes</span>
+                    
+                    <span class="label">Appointment Type:</span> 
+                    <span class="value">Follow-up Visit</span>
+                </div>
+            </div>
+
+            <div class="patient-info-section">
+                <h4>👤 Patient Information</h4>
+                
+                <div class="detail-grid">
+                    <span class="label">Patient:</span>
+                    <span class="value">{{ patient.first_name }}{% if patient.middle_initial %} {{ patient.middle_initial }}.{% endif %} {{ patient.last_name }}</span>
+                    
+                    <span class="label">Email:</span>
+                    <span class="value">{{ patient.email }}</span>
+                    
+                    <span class="label">Phone:</span>
+                    <span class="value">{{ patient.cell_phone or patient.home_phone or 'On file' }}</span>
+                </div>
+            </div>
+
+            <div class="follow-up-note">
+                <h4>📋 Follow-up Visit Preparation</h4>
+                <ul>
+                    <li>Please bring any new medical records or test results since your last visit</li>
+                    <li>Prepare a list of questions or concerns you'd like to discuss</li>
+                    <li>Note any changes in symptoms or medications</li>
+                    <li>Bring your current medications if dosages have changed</li>
+                    <li>Insurance card and photo ID</li>
+                </ul>
+                <p><strong>Please arrive 10 minutes early</strong> for check-in.</p>
+            </div>
+            
+            <div class="button-container">
+                <h4>Need to make changes to your appointment?</h4>
+                {% if appointment.reschedule_url %}
+                <a href="{{ appointment.reschedule_url }}" class="button-link">📅 Reschedule Appointment</a>
+                {% endif %}
+                {% if appointment.cancel_url %}
+                <a href="{{ appointment.cancel_url }}" class="button-link cancel-button">❌ Cancel Appointment</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <h4>MediCare Wellness Center</h4>
+            <p><strong>Your partner in health and wellness</strong></p>
+            
+            <p>You will also receive a separate confirmation email from Calendly with additional appointment management options.</p>
+            
+            <p>If you have any questions about your appointment, please contact us at your earliest convenience.</p>
+            
+            <p><em>This email contains confidential medical information. Please handle accordingly.</em></p>
+        </div>
+    </div>
+</body>
+</html>

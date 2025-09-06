@@ -6,9 +6,6 @@ from app.database.database import SessionLocal
 from app.database.models import Doctor, Patient, Appointment
 
 def seed_database():
-    """
-    Populates the database with initial doctors, detailed dummy patients, and dummy appointments.
-    """
     load_dotenv()
     db = SessionLocal()
     
@@ -40,8 +37,6 @@ def seed_database():
                 db.add(Doctor(**doc_data))
                 print(f"Adding Doctor: {doc_data['doctor_name']}")
         db.commit()
-
-        # --- 2. Add Fully Detailed Dummy Patients ---
         print("\n--- Seeding Patients ---")
         patients_data = [
             {
@@ -110,8 +105,6 @@ def seed_database():
                 db.add(Patient(**patient_data))
                 print(f"Adding Patient: {patient_data['first_name']} {patient_data['last_name']}")
         db.commit()
-
-        # --- 3. Add Dummy Appointments ---
         print("\n--- Seeding Appointments ---")
         
         doctors = {d.doctor_name: d.doctor_id for d in db.query(Doctor).all()}

@@ -13,13 +13,14 @@ def verify_webhook_signature(signature_header: str, body: bytes) -> bool:
     webhook_secret = os.getenv("CALENDLY_WEBHOOK_SECRET")
     if not webhook_secret or webhook_secret == "your_webhook_secret_here":
         logger.warning("CALENDLY_WEBHOOK_SECRET is not properly set - skipping signature verification")
-        return True 
+        return True  
     
     if not signature_header:
         logger.error("No signature header provided")
         return False
 
     try:
+        
         parts = {}
         for item in signature_header.split(","):
             if "=" in item:
@@ -32,9 +33,13 @@ def verify_webhook_signature(signature_header: str, body: bytes) -> bool:
         if not timestamp or not signature:
             logger.error(f"Missing timestamp or signature in header: {signature_header}")
             return False
+            
+        
         if int(timestamp) < time.time() - 300:
             logger.error("Webhook timestamp too old")
             return False
+
+        # Create expected signature
         signed_payload = f"{timestamp}.{body.decode('utf-8')}"
         expected_signature = hmac.new(
             webhook_secret.encode(), 
@@ -42,6 +47,7 @@ def verify_webhook_signature(signature_header: str, body: bytes) -> bool:
             digestmod=hashlib.sha256
         ).hexdigest()
         
+        # Compare signatures
         is_valid = hmac.compare_digest(expected_signature, signature)
         if not is_valid:
             logger.error(f"Signature mismatch. Expected: {expected_signature}, Got: {signature}")
@@ -59,8 +65,7 @@ class CalendlyService:
         self.webhook_secret = os.getenv('CALENDLY_WEBHOOK_SECRET', 'default_secret')
         
         if not self.api_token or not self.user_uri:
-            logger.warning("Calendly API token and user URI not properly configured")
-            return
+            raise ValueError("Calendly API token and user URI must be set")
         
         self.base_url = "https://api.calendly.com"
         self.headers = {
@@ -68,15 +73,14 @@ class CalendlyService:
             'Content-Type': 'application/json'
         }
         
-        try:
-            self.organization_uri = self._get_organization_uri()
-        except Exception as e:
-            logger.error(f"Error getting organization URI: {e}")
-            self.organization_uri = None
+        # Get organization URI (required for webhooks)
+        self.organization_uri = self._get_organization_uri()
+        
+        # Setup webhooks on initialization
         try:
             self.setup_webhooks()
         except Exception as e:
-            logger.warning(f"Webhook setup failed (this is OK for development): {e}")
+            logger.error(f"Error setting up webhooks during initialization: {e}")
 
     def _get_organization_uri(self) -> str:
         """Get organization URI from user info (required for webhook creation)"""
@@ -89,6 +93,7 @@ class CalendlyService:
             return org_uri
         except Exception as e:
             logger.error(f"Error getting organization URI: {e}")
+            # Fallback - this might not work for webhooks but prevents crashes
             return self.user_uri.replace('/users/', '/organizations/')
 
     def get_event_type_from_uri(self, event_uri: str) -> dict:
@@ -120,11 +125,6 @@ class CalendlyService:
                 headers=self.headers,
                 json=data
             )
-            
-            if response.status_code == 409:
-                logger.info("Webhook with this URL already exists - this is OK")
-                return {"status": "already_exists"}
-            
             response.raise_for_status()
             result = response.json()
             logger.info(f"Webhook created successfully: {result}")
@@ -132,20 +132,13 @@ class CalendlyService:
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Error creating webhook: {e}")
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e.response, 'text'):
                 logger.error(f"Response: {e.response.text}")
-                if e.response.status_code == 409:
-                    logger.info("Webhook already exists - continuing without error")
-                    return {"status": "already_exists"}
             raise
 
     def get_webhooks(self) -> list:
         """Get all webhook subscriptions"""
         try:
-            if not self.organization_uri:
-                logger.warning("Organization URI not available, cannot fetch webhooks")
-                return []
-                
             params = {'organization': self.organization_uri}
             response = requests.get(
                 f"{self.base_url}/webhook_subscriptions",
@@ -179,18 +172,15 @@ class CalendlyService:
     def setup_webhooks(self) -> bool:
         """Setup required webhooks for the application"""
         try:
-            if not self.organization_uri:
-                logger.warning("Organization URI not available, skipping webhook setup")
-                return False
             webhook_events = [
                 'invitee.created',
                 'invitee.canceled'
             ]
             
-            
+            # Get ngrok URL
             ngrok_url = os.getenv('NGROK_URL')
             if not ngrok_url or ngrok_url == 'your_ngrok_url_here' or 'ngrok-free.app' not in ngrok_url:
-                logger.info("NGROK_URL not properly configured. Skipping webhook setup.")
+                logger.warning("NGROK_URL not properly configured. Skipping webhook setup.")
                 logger.info("To enable webhooks:")
                 logger.info("1. Install ngrok: https://ngrok.com/download")
                 logger.info("2. Run: ngrok http 8000")
@@ -199,25 +189,27 @@ class CalendlyService:
             
             webhook_url = f"{ngrok_url}/api/webhooks/calendly"
             logger.info(f"Setting up webhook for URL: {webhook_url}")
+            
+            # Check if webhook already exists
             existing_webhooks = self.get_webhooks()
             for webhook in existing_webhooks:
                 callback_url = webhook.get('callback_url', '')
                 if callback_url == webhook_url:
                     logger.info("Webhook already exists and is active")
                     return True
-                elif webhook_url.replace('https://', '') in callback_url or ngrok_url in callback_url:
+                elif webhook_url.replace('https://', '') in callback_url:
+                    # URL might have changed (new ngrok session), delete old one
                     webhook_uuid = webhook['uri'].split('/')[-1]
                     logger.info(f"Deleting outdated webhook: {callback_url}")
                     self.delete_webhook(webhook_uuid)
+            
+            # Create new webhook
             result = self.create_webhook(webhook_url, webhook_events)
-            if result.get("status") == "already_exists":
-                logger.info("Webhook setup completed (already existed)")
-            else:
-                logger.info("Webhook setup completed successfully")
+            logger.info("Webhook setup completed successfully")
             return True
             
         except Exception as e:
-            logger.warning(f"Webhook setup failed: {e}")
+            logger.error(f"Error setting up webhooks: {e}")
             return False
 
     def test_webhook_connection(self) -> bool:

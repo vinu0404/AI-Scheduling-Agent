@@ -12,7 +12,7 @@ An intelligent, multi-page medical appointment scheduling system designed to str
 * **Admin Dashboard**: A dedicated page for administrators to view scheduled appointments, filter them by doctor, and see patient information.  
 * **Containerized Deployment**: Includes Dockerfile and docker-compose.yml for easy and reliable deployment.
 
-## **System Architecture**
+## **High level System Architecture**
 
 The application is built on a modern, decoupled architecture with a FastAPI backend serving a Streamlit frontend. This separation of concerns ensures scalability and maintainability.
 
@@ -60,6 +60,140 @@ graph TD
     B_Services --> B_DB
     B_DB --> DB
     E_Calendly --> B_API
+```
+
+## **Low level System Architecture**
+
+``` mermaid
+graph TB
+    subgraph "Client Layer"
+        USER["👤 Patients & Admins"]
+        BROWSER["🌐 Web Browser"]
+    end
+
+    subgraph "Frontend - Streamlit"
+        ST_APP["📱 Streamlit Application"]
+        ST_HOME["🏠 Home Page"]
+        ST_NEW["📝 New Patient Form"]
+        ST_EXISTING["👤 Existing Patient Portal"]
+        ST_CHAT["💬 AI Chat Interface"]
+        ST_ADMIN["👨‍💼 Admin Dashboard"]
+        ST_VERIFY["🔍 Patient Verification"]
+    end
+
+    subgraph "Backend - FastAPI"
+        API_MAIN["🚀 FastAPI Main Application"]
+        
+        subgraph "API Endpoints"
+            EP_PATIENTS["👥 /api/patients"]
+            EP_DOCTORS["👨‍⚕️ /api/doctors"]
+            EP_RECOMMEND["🤖 /api/recommend-doctor"]
+            EP_CHAT["💬 /api/chat"]
+            EP_VERIFY["✅ /api/verify-patient"]
+            EP_ADMIN["📊 /api/admin/*"]
+            EP_WEBHOOK["🔗 /api/webhooks/calendly"]
+        end
+        
+        subgraph "Service Layer"
+            AI_SERVICE["🧠 MedicalAIService"]
+            EMAIL_SERVICE["📧 EmailService"]
+            CALENDLY_SERVICE["📅 CalendlyService"]
+        end
+        
+        subgraph "Data Layer"
+            DB_MODELS["🗄️ SQLAlchemy Models"]
+            DB_SESSION["🔄 Database Sessions"]
+        end
+    end
+
+    subgraph "External Services"
+        OPENAI["🤖 OpenAI GPT-4 API"]
+        CALENDLY_API["📅 Calendly API"]
+        SMTP_SERVER["📧 SMTP Email Server"]
+        WEBHOOK_LISTENER["🔔 Webhook Endpoint"]
+    end
+
+    subgraph "Data Storage"
+        SQLITE["💾 SQLite Database"]
+        subgraph "Database Tables"
+            TB_PATIENTS["👥 patients"]
+            TB_DOCTORS["👨‍⚕️ doctors"]
+            TB_APPOINTMENTS["📅 appointments"]
+        end
+    end
+
+    subgraph "AI & Intelligence"
+        LANGCHAIN["🔗 LangChain Framework"]
+        DOCTOR_REC["🎯 Doctor Recommendation Engine"]
+        CHAT_MEMORY["🧠 Conversation Memory"]
+        STRUCTURED_OUTPUT["📋 Pydantic Structured Output"]
+    end
+
+    %% Client Connections
+    USER --> BROWSER
+    BROWSER --> ST_APP
+
+    %% Frontend Internal Flow
+    ST_APP --> ST_HOME
+    ST_HOME --> ST_NEW
+    ST_HOME --> ST_EXISTING
+    ST_HOME --> ST_CHAT
+    ST_HOME --> ST_ADMIN
+    ST_EXISTING --> ST_VERIFY
+
+    %% Frontend to Backend
+    ST_NEW --> EP_PATIENTS
+    ST_NEW --> EP_RECOMMEND
+    ST_EXISTING --> EP_VERIFY
+    ST_EXISTING --> EP_DOCTORS
+    ST_CHAT --> EP_CHAT
+    ST_ADMIN --> EP_ADMIN
+    ST_VERIFY --> EP_VERIFY
+
+    %% API to Services
+    EP_PATIENTS --> DB_MODELS
+    EP_DOCTORS --> DB_MODELS
+    EP_RECOMMEND --> AI_SERVICE
+    EP_CHAT --> AI_SERVICE
+    EP_VERIFY --> DB_MODELS
+    EP_ADMIN --> DB_MODELS
+    EP_WEBHOOK --> CALENDLY_SERVICE
+    EP_WEBHOOK --> EMAIL_SERVICE
+
+    %% Service Dependencies
+    AI_SERVICE --> OPENAI
+    AI_SERVICE --> LANGCHAIN
+    EMAIL_SERVICE --> SMTP_SERVER
+    CALENDLY_SERVICE --> CALENDLY_API
+
+    %% AI Components
+    LANGCHAIN --> DOCTOR_REC
+    LANGCHAIN --> CHAT_MEMORY
+    LANGCHAIN --> STRUCTURED_OUTPUT
+
+    %% Database Layer
+    DB_MODELS --> DB_SESSION
+    DB_SESSION --> SQLITE
+    SQLITE --> TB_PATIENTS
+    SQLITE --> TB_DOCTORS
+    SQLITE --> TB_APPOINTMENTS
+
+    %% External Integration Flow
+    CALENDLY_API --> WEBHOOK_LISTENER
+    WEBHOOK_LISTENER --> EP_WEBHOOK
+
+    %% Styling
+    classDef frontend fill:#e1f5fe
+    classDef backend fill:#f3e5f5
+    classDef external fill:#fff3e0
+    classDef database fill:#e8f5e8
+    classDef ai fill:#fce4ec
+
+    class ST_APP,ST_HOME,ST_NEW,ST_EXISTING,ST_CHAT,ST_ADMIN,ST_VERIFY frontend
+    class API_MAIN,EP_PATIENTS,EP_DOCTORS,EP_RECOMMEND,EP_CHAT,EP_VERIFY,EP_ADMIN,EP_WEBHOOK,AI_SERVICE,EMAIL_SERVICE,CALENDLY_SERVICE,DB_MODELS,DB_SESSION backend
+    class OPENAI,CALENDLY_API,SMTP_SERVER,WEBHOOK_LISTENER external
+    class SQLITE,TB_PATIENTS,TB_DOCTORS,TB_APPOINTMENTS database
+    class LANGCHAIN,DOCTOR_REC,CHAT_MEMORY,STRUCTURED_OUTPUT ai
 ```
 
 ## **Technical Deep Dive**

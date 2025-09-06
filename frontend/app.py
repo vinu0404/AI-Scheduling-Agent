@@ -3,10 +3,15 @@ import requests
 import datetime
 import uuid
 import pandas as pd
+
 st.set_page_config(page_title="MediCare Wellness Center", layout="wide")
+
 API_BASE_URL = "http://localhost:8000/api"
+
+# Initialize session state
 if 'page' not in st.session_state:
     st.session_state.page = "home"
+
 if 'doctors' not in st.session_state:
     try:
         response = requests.get(f"{API_BASE_URL}/doctors")
@@ -14,14 +19,32 @@ if 'doctors' not in st.session_state:
     except requests.exceptions.ConnectionError:
         st.session_state.doctors = []
         st.error("Connection Error: Could not connect to the backend. Please ensure it is running.")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
 if "chat_session_id" not in st.session_state:
     st.session_state.chat_session_id = str(uuid.uuid4())
+
 if "verified_patient" not in st.session_state:
     st.session_state.verified_patient = None
+
+def parse_datetime_flexible(date_string):
+    """Parse datetime string with flexible format handling"""
+    try:
+        # Try ISO8601 format first
+        return pd.to_datetime(date_string, format='ISO8601').strftime('%Y-%m-%d %I:%M %p')
+    except:
+        try:
+            # Try mixed format parsing
+            return pd.to_datetime(date_string, format='mixed').strftime('%Y-%m-%d %I:%M %p')
+        except:
+            # If all else fails, return the original string
+            return date_string
+
 def navigate_to(page):
     st.session_state.page = page
+
 def home_page():
     st.title("🏥 Welcome to MediCare Wellness Center")
     st.write("Your partner in health. Please select an option below to get started.")
@@ -504,6 +527,7 @@ def admin_page():
         with col3:
             active_appointments = sum(1 for apt in appointments_data if apt['status'] == 'scheduled')
             st.metric("Active Appointments", active_appointments)
+        
         st.subheader("👨‍⚕️ Doctor Appointment Summary")
         if doctor_stats:
             df_stats = pd.DataFrame(doctor_stats)
@@ -521,10 +545,12 @@ def admin_page():
         
         if appointments_data:
             df_appointments = pd.DataFrame(appointments_data)
+            
+            # Enhanced datetime parsing with flexible handling
             if 'appointment_time' in df_appointments.columns:
-                df_appointments['appointment_time'] = pd.to_datetime(df_appointments['appointment_time']).dt.strftime('%Y-%m-%d %I:%M %p')
+                df_appointments['appointment_time'] = df_appointments['appointment_time'].apply(parse_datetime_flexible)
             if 'created_at' in df_appointments.columns:
-                df_appointments['created_at'] = pd.to_datetime(df_appointments['created_at']).dt.strftime('%Y-%m-%d %I:%M %p')
+                df_appointments['created_at'] = df_appointments['created_at'].apply(parse_datetime_flexible)
             
             display_columns = {
                 'appointment_id': 'ID',
@@ -536,11 +562,11 @@ def admin_page():
                 'created_at': 'Booked On'
             }
             
-           
+            # Only include columns that exist in the DataFrame
             available_columns = {k: v for k, v in display_columns.items() if k in df_appointments.columns}
             df_display = df_appointments[list(available_columns.keys())].rename(columns=available_columns)
             
-            
+            # Filters
             col1, col2, col3 = st.columns(3)
             with col1:
                 status_filter = st.selectbox("Filter by Status", ["All"] + df_appointments['status'].unique().tolist())
@@ -549,7 +575,7 @@ def admin_page():
             with col3:
                 date_filter = st.date_input("Filter by Date", value=None)
             
-            
+            # Apply filters
             filtered_df = df_display.copy()
             
             if status_filter != "All":
@@ -563,10 +589,10 @@ def admin_page():
                 mask = df_appointments['appointment_time'].str.contains(date_str, na=False)
                 filtered_df = filtered_df[mask]
             
-            
+            # Display filtered results
             st.dataframe(filtered_df, use_container_width=True)
             
-            
+            # Export functionality
             if st.button("📥 Export to CSV"):
                 csv = filtered_df.to_csv(index=False)
                 st.download_button(
@@ -583,7 +609,7 @@ def admin_page():
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
     
-    
+    # Logout and navigation
     if st.button("🚪 Logout"):
         st.session_state.admin_authenticated = False
         st.rerun()
@@ -596,7 +622,7 @@ def chat_page():
     st.title("💬 AI Assistant")
     st.write("Ask me questions about our services or doctors.")
 
-    
+    # Display chat messages from history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -633,6 +659,7 @@ def chat_page():
         navigate_to("home")
         st.rerun()
 
+# Main navigation
 if st.session_state.page == "home":
     home_page()
 elif st.session_state.page == "patient_type_selection":

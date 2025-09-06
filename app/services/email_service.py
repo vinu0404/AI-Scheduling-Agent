@@ -36,6 +36,6 @@ class EmailService:
                 server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
                 server.send_message(msg)
-                print(f"Email sent successfully to {to_email}")
+                print(f"Email sent successfully {to_email}")
         except Exception as e:
             print(f"Failed to send email to {to_email}. Error: {e}")
